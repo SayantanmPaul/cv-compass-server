@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { resumeScreeningRouter } from "./routes/screening.route";
 
 //load environment variables
 dotenv.config({ path: ".env.local" });
@@ -27,11 +28,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", userRouter);
-
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+app.use("/api", resumeScreeningRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
