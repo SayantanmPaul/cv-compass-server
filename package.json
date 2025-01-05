@@ -1,0 +1,34 @@
+{
+  "name": "generative-resume-parser",
+  "version": "1.0.0",
+  "description": "An generative resume screening platform",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx ts-node ./src/app.ts",
+    "start:dev": "nodemon ./src/app.ts",
+    "start:prod": "npm run build && node ./dist/app.js",
+    "start:nodemon": "./node_modules/nodemon/bin/nodemon.js",
+    "lint": "eslint src/**",
+    "build": "npx tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/express": "^4.17.21",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react": "^7.37.3",
+    "globals": "^15.14.0",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.19.0"
+  },
+  "dependencies": {
+    "@types/cors": "^2.8.17",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
