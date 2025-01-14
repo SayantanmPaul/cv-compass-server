@@ -4,14 +4,12 @@ import dotenv from "dotenv";
 import { resumeScreeningRouter } from "./routes/screening.route";
 
 //load environment variables
-dotenv.config({ path: ".env.local" });
-
-console.log("Loaded Environment Variables:", process.env.PORTNAME);
+dotenv.config();
 
 const isProductionMode = false;
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORTNAME || 3001;
 
 //setup cors
 app.use(
