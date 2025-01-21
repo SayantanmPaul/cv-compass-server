@@ -2,27 +2,14 @@
     "version": 2,
     "builds": [
         {
-            "src": "app.ts",
-            "use": "@vercel/node",
-            "config": {
-                "includeFiles": [
-                    "lib/**/*",
-                    "node_modules/**/*"
-                ]
-            }
+            "src": "dist/app.js",
+            "use": "@vercel/node"
         }
     ],
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "app.ts"
-        },
-        {
-            "src": "/api/upload",
-            "dest": "/app.ts",
-            "methods": [
-                "POST"
-            ]
+            "dest": "dist/app.js"
         }
     ]
 }
