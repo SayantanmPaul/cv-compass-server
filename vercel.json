@@ -10,10 +10,5 @@
             "src": "/(.*)",
             "dest": "src/app.ts"
         }
-    ],
-    "functions": {
-        "src/app.ts": {
-            "runtime": "@vercel/node"
-        }
-    }
+    ]
 }
