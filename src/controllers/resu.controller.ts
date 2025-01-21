@@ -50,6 +50,14 @@ export const resumeParserController = async (req: Request, res: Response) => {
           jobDescription: jobDescription,
         });
 
+        if (llama3EvaluationRes == null) {
+          return createErrorResponse(
+            res,
+            501,
+            "Error in generating response from llama3.3"
+          );
+        }
+
         res.status(200).json({
           message: "Resume feedback generated successfully",
           // providedResume: parsedResData[0].text,
