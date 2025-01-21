@@ -16,6 +16,13 @@
         {
             "src": "/(.*)",
             "dest": "app.ts"
+        },
+        {
+            "src": "/api/upload",
+            "dest": "/app.ts",
+            "methods": [
+                "POST"
+            ]
         }
     ]
 }
