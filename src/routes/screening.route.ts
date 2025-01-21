@@ -6,6 +6,6 @@ export const resumeScreeningRouter = express.Router();
 
 resumeScreeningRouter.post(
   "/upload",
-  upload.single("file"),
+  upload.single("resume"),
   resumeParserController
 );
