@@ -27,7 +27,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 //helath checkup route: cron job lambda will hit this route to check if the server is up
-app.get("/health", (req, res) => {
+app.get("/api/health", (req, res) => {
   return res.status(200).json({
     message: "Server is up and running",
     timeStamp: new Date().toISOString(),
