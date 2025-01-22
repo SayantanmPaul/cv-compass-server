@@ -64,3 +64,21 @@ export const getFeedbacks = (content: string): string[] => {
         .filter((feedback) => feedback.length > 0)
     : [];
 };
+
+// get the ats score breakups from the content
+export const getATSScoreBreakups = (
+  content: string
+): { [key: string]: number } => {
+  const regex =
+    /## (Keyword Matching|Years of Experience|Project Relevance|Quantifiable Achievements) Percentage:\s*(\d+)%/gi;
+  const data: { [key: string]: number } = {};
+  let match;
+
+  while ((match = regex.exec(content)) !== null) {
+    const key = match[1];
+    const value = parseInt(match[2], 10);
+    data[key] = value;
+  }
+
+  return data;
+};

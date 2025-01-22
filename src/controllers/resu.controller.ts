@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
 // import { hfInterface } from "../lib/huggingface";
+import { RateLimitError } from "groq-sdk";
 import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import {
   createErrorResponse,
   getATSScore,
+  getATSScoreBreakups,
   getFeedbacks,
   getMissingKeywords,
   getRelevantKeywords,
@@ -65,6 +67,7 @@ export const resumeParserController = async (req: Request, res: Response) => {
           status: "success",
           data: {
             atsScore: getATSScore(llama3EvaluationRes),
+            atsBreakDown: getATSScoreBreakups(llama3EvaluationRes),
             summary: getSummary(llama3EvaluationRes),
             relavantKeywords: getRelevantKeywords(llama3EvaluationRes),
             missingKeywords: getMissingKeywords(llama3EvaluationRes),
@@ -72,12 +75,27 @@ export const resumeParserController = async (req: Request, res: Response) => {
           },
         });
       } catch (error) {
-        return createErrorResponse(
-          res,
-          501,
-          "Error in generating response from llama3.3",
-          error
-        );
+        if (error instanceof RateLimitError) {
+          //count retry time based on retry-after header
+          const retryAfter = error.headers?.["retry-after"];
+          let retryMessage;
+
+          if (retryAfter) {
+            const countMinutes = Math.ceil(parseInt(retryAfter, 10) / 60);
+            retryMessage = `API rate limit reached. Please try again after ${countMinutes} minutes.`;
+          } else {
+            retryMessage = "API rate limit reached. Please try again later.";
+          }
+          return createErrorResponse(res, 429, retryMessage);
+        }
+        //generic error
+        else
+          return createErrorResponse(
+            res,
+            501,
+            "Error in generating response from llama3.3",
+            error
+          );
       }
     } catch (error) {
       return createErrorResponse(

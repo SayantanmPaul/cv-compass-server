@@ -21,7 +21,7 @@ Your tasks are:
         *   Years of Experience: For each year of relevant experience mentioned in the resume that matches the job description's requirements, award up to 2 points (up to a maximum of 10 points). Consider partial years proportionally.
         *   Project Relevance: Assess how closely the candidate's projects align with the key responsibilities and technologies mentioned in the job description. Award higher scores for projects that directly address these requirements. Consider the scale, complexity, and impact of the projects.
         *   Quantifiable Achievements: Give significant weight to quantifiable achievements and metrics. Look for statements that demonstrate the impact of the candidate's work using numbers, percentages, or other measurable results 
-    Only share the ATS score. Do not share the breakdown.
+    
 5.  Provide specific *actionable* feedback on how the candidate can improve their resume to better match the job description and improve their ATS score. These feedbacks should focus on adding missing keywords, rephrasing existing content, and improving the overall structure and formatting of the resume.
 
 Output the results in the following format:
@@ -30,8 +30,19 @@ Output the results in the following format:
 ## Missing Keywords: [Comma-separated list of missing keywords]
 ## Relevant Keywords: [Comma-separated list of relevant keywords]
 ## ATS Score: [Score between 0 and 100]
-## Feedback: [Feedback to candidate for improvement. Each feedback point should be on a new line with each point starting with a bullet point (*)]
-`;
+## Keyword Matching Percentage: [Percentage of keyword matching]%
+## Years of Experience Percentage: [Percentage of Years of Experience]%
+## Project Relevance Percentage: [Percentage of Project Relevance]%
+## Quantifiable Achievements Percentage: [Percentage of Quantifiable Achievements]%
+(Only share the scores. Do not share the breakdown.)
+
+## Feedback:
+* [Feedback point 1]
+* [Feedback point 2]
+* [Feedback point 3]
+...
+
+Note: Assume that inputs will include both the resume and the job description. Synonyms and context should be considered while evaluating keyword matches, and feedback should focus on the highest-impact improvements.`;
 
 export const llama3Evaluation = async ({
   markDownResume,
@@ -55,7 +66,7 @@ export const llama3Evaluation = async ({
       },
     ],
     model: "llama-3.3-70b-versatile",
-    max_tokens: 4000,
+    max_tokens: 2000,
   });
 
   const llmResult = result.choices[0].message.content;
