@@ -11,9 +11,9 @@ Your tasks are:
 
 1.   Provide a concise summary of the resume, highlighting relevant skills and experience.
 
-2.   Identify the relevant keywords from the job description that are *present* in the resume.
+2.   Identify the essential relevant keywords from the job description that are *present* in the resume.
 
-3.   Identify missing keywords from the job description that are *not* present in the resume.
+3.   Identify the essential missing keywords from the job description that are *not* present in the resume.
 
 4.   Calculate an ATS score on a scale of 0-100 based on the following criteria:
     *   Keyword Matching (60%): Calculate the percentage of relevant keywords from the job description that are present in the resume. Multiply this percentage by 60.
@@ -66,7 +66,7 @@ export const llama3Evaluation = async ({
       },
     ],
     model: "llama-3.3-70b-versatile",
-    max_tokens: 2000,
+    max_tokens: 2400,
   });
 
   const llmResult = result.choices[0].message.content;

@@ -71,13 +71,26 @@ export const getATSScoreBreakups = (
 ): { [key: string]: number } => {
   const regex =
     /## (Keyword Matching|Years of Experience|Project Relevance|Quantifiable Achievements) Percentage:\s*(\d+)%/gi;
+
+  // mapping objs to rename keys to camelcase
+  const keyMappings: { [key: string]: string } = {
+    "Keyword Matching": "keywordMatching",
+    "Years of Experience": "yearsOfExperience",
+    "Project Relevance": "projectRelevance",
+    "Quantifiable Achievements": "quantifiableAchievements",
+  };
+
   const data: { [key: string]: number } = {};
   let match;
 
+  // use the regex to find all matches in the content
   while ((match = regex.exec(content)) !== null) {
     const key = match[1];
     const value = parseInt(match[2], 10);
-    data[key] = value;
+
+    // map the orignal key to camelcase version
+    const newKey = keyMappings[key] || key;
+    data[newKey] = value;
   }
 
   return data;
