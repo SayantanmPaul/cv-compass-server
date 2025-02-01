@@ -2,6 +2,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import { resumeScreeningRouter } from "./routes/screening.route";
+import cookieParser from "cookie-parser";
 
 //load environment variables
 dotenv.config();
@@ -22,7 +23,7 @@ app.use(
     exposedHeaders: ["Authorization"],
   })
 );
-
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

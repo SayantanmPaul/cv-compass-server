@@ -16,6 +16,12 @@ import {
 import { generateMarkdownResume } from "../lib/llama-parser";
 import { llama3Evaluation } from "../lib/llama3";
 import { isValidResumeFileType } from "../lib/supportedFileType";
+import { v4 as uuidv4 } from "uuid";
+import { loadMetrics, saveCounters } from "../lib/fileStorage";
+
+// website visit metrics
+let { uniqueVisitors, successfulFeedbacks } = loadMetrics();
+const uniqueVisitorIds = new Set<string>();
 
 export const resumeParserController = async (req: Request, res: Response) => {
   try {
@@ -59,6 +65,9 @@ export const resumeParserController = async (req: Request, res: Response) => {
             "Error in generating response from llama3.3"
           );
         }
+
+        successfulFeedbacks++;
+        saveCounters({ uniqueVisitors, successfulFeedbacks });
 
         res.status(200).json({
           message: "Resume feedback generated successfully",
@@ -112,5 +121,39 @@ export const resumeParserController = async (req: Request, res: Response) => {
     }
   } catch (error) {
     return createErrorResponse(res, 501, "Error processing the request", error);
+  }
+};
+
+export const countVisitorSuccessFeedback = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const visitId = req.cookies.visitorId;
+    if (!visitId) {
+      const newVisitId = uuidv4();
+      res.cookie("visitorId", newVisitId, {
+        maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days cookies store
+        httpOnly: true,
+      });
+      uniqueVisitorIds.add(newVisitId);
+      uniqueVisitors++;
+      saveCounters({ uniqueVisitors, successfulFeedbacks });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        uniqueVisitorsCount: uniqueVisitors,
+        successfulFeedbacksCount: successfulFeedbacks,
+      },
+    });
+  } catch (error) {
+    return createErrorResponse(
+      res,
+      500,
+      "Error retrieving visitor counts",
+      error
+    );
   }
 };
