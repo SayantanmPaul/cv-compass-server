@@ -135,6 +135,8 @@ export const countVisitorSuccessFeedback = async (
       res.cookie("visitorId", newVisitId, {
         maxAge: 15 * 24 * 60 * 60 * 1000, // 15 days cookies store
         httpOnly: true,
+        secure: true,
+        sameSite: "none",
       });
       uniqueVisitorIds.add(newVisitId);
       uniqueVisitors++;
