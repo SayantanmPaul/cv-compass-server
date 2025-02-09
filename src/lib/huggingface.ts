@@ -1,5 +1,6 @@
 import { HfInference } from "@huggingface/inference";
 import dotenv from "dotenv";
+import { systemInstructions } from "./llama3";
 
 dotenv.config();
 
@@ -11,3 +12,35 @@ if (!hfToken) {
 
 export const hfInterface = new HfInference(hfToken);
 console.log("Hugging Face Inference initialized successfully.");
+
+const model = "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B";
+
+export const HFDeepSeepEvaluation = async ({
+  markDownResume,
+  jobDescription,
+}: {
+  markDownResume: string;
+  jobDescription: string;
+}) => {
+  const prompt = `
+      ${systemInstructions}
+      
+      Resume Content: ${markDownResume}
+      Job Description: ${jobDescription}
+    `;
+
+  try {
+    const result = await hfInterface.textGeneration({
+      model: model,
+      inputs: prompt,
+      parameters: {
+        max_new_tokens: 1500,
+        return_full_text: false,
+      },
+    });
+
+    return result.generated_text;
+  } catch (error) {
+    console.log(error);
+  }
+};

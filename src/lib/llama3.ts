@@ -44,7 +44,7 @@ Output the results in the following format:
 
 Note: Assume that inputs will include both the resume and the job description. Synonyms and context should be considered while evaluating keyword matches, and feedback should focus on the highest-impact improvements.`;
 
-export const llama3Evaluation = async ({
+export const Llama3Evaluation = async ({
   markDownResume,
   jobDescription,
 }: {
