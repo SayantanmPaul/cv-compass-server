@@ -51,24 +51,28 @@ export const Llama3Evaluation = async ({
   markDownResume: string;
   jobDescription: string;
 }) => {
-  const result = await llamaClient.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content: systemInstructions,
-      },
-      {
-        role: "user",
-        content: ` 
-              Resume Content: ${markDownResume}
-              Job Description: ${jobDescription}
-              `,
-      },
-    ],
-    model: "llama-3.3-70b-versatile",
-    max_tokens: 2400,
-  });
+  try {
+    const result = await llamaClient.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: systemInstructions,
+        },
+        {
+          role: "user",
+          content: ` 
+                Resume Content: ${markDownResume}
+                Job Description: ${jobDescription}
+                `,
+        },
+      ],
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 2400,
+    });
 
-  const llmResult = result.choices[0].message.content;
-  return llmResult;
+    const llmResult = result.choices[0].message.content;
+    return llmResult;
+  } catch (error) {
+    console.log(error);
+  }
 };
