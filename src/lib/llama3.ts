@@ -44,31 +44,35 @@ Output the results in the following format:
 
 Note: Assume that inputs will include both the resume and the job description. Synonyms and context should be considered while evaluating keyword matches, and feedback should focus on the highest-impact improvements.`;
 
-export const llama3Evaluation = async ({
+export const Llama3Evaluation = async ({
   markDownResume,
   jobDescription,
 }: {
   markDownResume: string;
   jobDescription: string;
 }) => {
-  const result = await llamaClient.chat.completions.create({
-    messages: [
-      {
-        role: "system",
-        content: systemInstructions,
-      },
-      {
-        role: "user",
-        content: ` 
-              Resume Content: ${markDownResume}
-              Job Description: ${jobDescription}
-              `,
-      },
-    ],
-    model: "llama-3.3-70b-versatile",
-    max_tokens: 2400,
-  });
+  try {
+    const result = await llamaClient.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: systemInstructions,
+        },
+        {
+          role: "user",
+          content: ` 
+                Resume Content: ${markDownResume}
+                Job Description: ${jobDescription}
+                `,
+        },
+      ],
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 2400,
+    });
 
-  const llmResult = result.choices[0].message.content;
-  return llmResult;
+    const llmResult = result.choices[0].message.content;
+    return llmResult;
+  } catch (error) {
+    console.log(error);
+  }
 };

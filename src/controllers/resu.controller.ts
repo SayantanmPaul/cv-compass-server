@@ -14,38 +14,88 @@ import {
   getSummary,
 } from "../lib/helper";
 import { generateMarkdownResume } from "../lib/llama-parser";
-import { llama3Evaluation } from "../lib/llama3";
+import { Llama3Evaluation } from "../lib/llama3";
 import { isValidResumeFileType } from "../lib/supportedFileType";
 import { v4 as uuidv4 } from "uuid";
 import { loadMetrics, saveCounters } from "../lib/fileStorage";
+import { HFDeepSeepEvaluation } from "../lib/huggingface";
 
 // website visit metrics
 let { uniqueVisitors, successfulFeedbacks } = loadMetrics();
 const uniqueVisitorIds = new Set<string>();
 
+// handleing temporary file
+const handleTempFile = async ({
+  fileBuffer,
+  extension,
+}: {
+  fileBuffer: Buffer;
+  extension: "pdf";
+}) => {
+  const tempPath = path.join(__dirname, `temp-${Date.now()}.${extension}`);
+  await fs.promises.writeFile(tempPath, fileBuffer);
+  return tempPath;
+};
+
+// rate limit handler
+const handleRateLimitError = (error: RateLimitError, res: Response) => {
+  const retryAfter = error.headers?.["retry-after"];
+  let retryMessage;
+
+  if (retryAfter) {
+    const countMinutes = Math.ceil(parseInt(retryAfter, 10) / 60);
+    retryMessage = `API rate limit reached. Please try again after ${countMinutes} minutes.`;
+  } else {
+    retryMessage = "API rate limit reached. Please try again later.";
+  }
+  return createErrorResponse(res, 429, retryMessage);
+};
+
+// handle model evaluation
+const handleModelEvaluation = ({
+  modelName,
+  markDownResume,
+  jobDescription,
+}: {
+  modelName: string;
+  markDownResume: string;
+  jobDescription: string;
+}) => {
+  const evalutorFn: Record<
+    string,
+    typeof Llama3Evaluation | typeof HFDeepSeepEvaluation
+  > = {
+    "Llama-3.3-70b-versatile": Llama3Evaluation,
+    "DeepSeek-R1-Distill-Qwen-32B": HFDeepSeepEvaluation,
+  };
+
+  const evaluator = evalutorFn[modelName];
+
+  if (!evaluator) throw new Error("Invalid model specified");
+
+  return evaluator({ markDownResume, jobDescription });
+};
+
 export const resumeParserController = async (req: Request, res: Response) => {
   try {
     const resume = req.file;
     const jobDescription = req.body.jobDescription;
+    const modelName = req.body.modelName;
 
     //vadidate resume type and job description
     if (!resume || !jobDescription) {
-      return res.status(400).json({
-        message: "Either job description or resume isn't provided",
-        code: 400,
-      });
+      return createErrorResponse(res, 400, "Missing resume or job description");
     }
 
     if (!isValidResumeFileType(resume.mimetype)) {
-      return res.status(400).json({
-        message: "Invalid file type. Supported file type is pdf",
-        code: 400,
-      });
+      return createErrorResponse(res, 400, "Invalid file type. Supported: PDF");
     }
 
     // temporary file path to store resume
-    const resumeTempPath = path.join(__dirname, `temp-${Date.now()}.pdf`);
-    await fs.promises.writeFile(resumeTempPath, resume.buffer);
+    const resumeTempPath = await handleTempFile({
+      fileBuffer: resume.buffer,
+      extension: "pdf",
+    });
 
     try {
       // LlamaParseReader to parse the resume
@@ -53,12 +103,13 @@ export const resumeParserController = async (req: Request, res: Response) => {
 
       // evaluate resume against job description
       try {
-        const llama3EvaluationRes = await llama3Evaluation({
+        const evaluationResult = await handleModelEvaluation({
           markDownResume: markDownResume,
           jobDescription: jobDescription,
+          modelName: modelName,
         });
 
-        if (llama3EvaluationRes == null) {
+        if (!evaluationResult) {
           return createErrorResponse(
             res,
             501,
@@ -75,49 +126,35 @@ export const resumeParserController = async (req: Request, res: Response) => {
           // jobDescription: jobDescription,
           status: "success",
           data: {
-            atsScore: getATSScore(llama3EvaluationRes),
-            atsBreakDown: getATSScoreBreakups(llama3EvaluationRes),
-            summary: getSummary(llama3EvaluationRes),
-            relavantKeywords: getRelevantKeywords(llama3EvaluationRes),
-            missingKeywords: getMissingKeywords(llama3EvaluationRes),
-            feedback: getFeedbacks(llama3EvaluationRes),
+            atsScore: getATSScore(evaluationResult),
+            atsBreakDown: getATSScoreBreakups(evaluationResult),
+            summary: getSummary(evaluationResult),
+            relavantKeywords: getRelevantKeywords(evaluationResult),
+            missingKeywords: getMissingKeywords(evaluationResult),
+            feedback: getFeedbacks(evaluationResult),
           },
         });
       } catch (error) {
-        if (error instanceof RateLimitError) {
-          //count retry time based on retry-after header
-          const retryAfter = error.headers?.["retry-after"];
-          let retryMessage;
-
-          if (retryAfter) {
-            const countMinutes = Math.ceil(parseInt(retryAfter, 10) / 60);
-            retryMessage = `API rate limit reached. Please try again after ${countMinutes} minutes.`;
-          } else {
-            retryMessage = "API rate limit reached. Please try again later.";
-          }
-          return createErrorResponse(res, 429, retryMessage);
-        }
+        if (error instanceof RateLimitError)
+          return handleRateLimitError(error, res);
         //generic error
-        else
-          return createErrorResponse(
-            res,
-            501,
-            "Error in generating response from llama3.3",
-            error
-          );
+        return createErrorResponse(
+          res,
+          501,
+          "Model evaluation failed, Please try another model",
+          error
+        );
       }
     } catch (error) {
       return createErrorResponse(
         res,
         501,
-        "Error in parsing the resume",
+        "Resume parsing failed, Please try again later",
         error
       );
     } finally {
       // delete temporary file after processing
-      await fs.promises
-        .unlink(resumeTempPath)
-        .catch((err) => console.error("Error deleting temp file:", err));
+      await fs.promises.unlink(resumeTempPath).catch(console.error);
     }
   } catch (error) {
     return createErrorResponse(res, 501, "Error processing the request", error);
