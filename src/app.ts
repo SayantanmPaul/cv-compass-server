@@ -7,7 +7,7 @@ import cookieParser from "cookie-parser";
 //load environment variables
 dotenv.config();
 
-const isProductionMode = true;
+const isProductionMode = false;
 
 const app = express();
 const PORT = process.env.PORT || 3001;
