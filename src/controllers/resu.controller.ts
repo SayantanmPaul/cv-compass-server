@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 // import { hfInterface } from "../lib/huggingface";
-import { RateLimitError } from "groq-sdk";
 import "dotenv/config";
 import fs from "fs";
+import { RateLimitError } from "groq-sdk";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 import {
   createErrorResponse,
   getATSScore,
@@ -13,16 +14,11 @@ import {
   getRelevantKeywords,
   getSummary,
 } from "../lib/helper";
+import { HFDeepSeepEvaluation } from "../lib/huggingface";
 import { generateMarkdownResume } from "../lib/llama-parser";
 import { Llama3Evaluation } from "../lib/llama3";
+import { redis } from "../lib/redis";
 import { isValidResumeFileType } from "../lib/supportedFileType";
-import { v4 as uuidv4 } from "uuid";
-import { loadMetrics, saveCounters } from "../lib/fileStorage";
-import { HFDeepSeepEvaluation } from "../lib/huggingface";
-
-// website visit metrics
-let { uniqueVisitors, successfulFeedbacks } = loadMetrics();
-const uniqueVisitorIds = new Set<string>();
 
 // handleing temporary file
 const handleTempFile = async ({
@@ -117,8 +113,26 @@ export const resumeParserController = async (req: Request, res: Response) => {
           );
         }
 
-        successfulFeedbacks++;
-        saveCounters({ uniqueVisitors, successfulFeedbacks });
+        await redis.incr("successful_feedbacks");
+
+        // store a copy to redis
+        const copyData = {
+          resume: resume.buffer.toString("base64"),
+          jobDescription: jobDescription,
+          evaluationResult: {
+            atsScore: getATSScore(evaluationResult),
+            atsBreakDown: getATSScoreBreakups(evaluationResult),
+            summary: getSummary(evaluationResult),
+            relevantKeywords: getRelevantKeywords(evaluationResult),
+            missingKeywords: getMissingKeywords(evaluationResult),
+            feedback: getFeedbacks(evaluationResult),
+          },
+          timestamp: new Date().toISOString(),
+        };
+
+        const dataKey = `resume_with_jd:${uuidv4()}`;
+
+        await redis.set(dataKey, JSON.stringify(copyData));
 
         res.status(200).json({
           message: "Resume feedback generated successfully",
@@ -175,16 +189,20 @@ export const countVisitorSuccessFeedback = async (
         secure: true,
         sameSite: "none",
       });
-      uniqueVisitorIds.add(newVisitId);
-      uniqueVisitors++;
-      saveCounters({ uniqueVisitors, successfulFeedbacks });
     }
+    await redis.sadd("unique_visits", visitId);
+
+    // retrieve visitor counts
+    const [uniqueVisitorCount, successfulGenerationCount] = await Promise.all([
+      redis.scard("unique_visits"),
+      redis.get("successful_feedbacks").then((res) => parseInt(res || "0", 10)),
+    ]);
 
     res.status(200).json({
       status: "success",
       data: {
-        uniqueVisitorsCount: uniqueVisitors,
-        successfulFeedbacksCount: successfulFeedbacks,
+        uniqueVisitorsCount: uniqueVisitorCount,
+        successfulFeedbacksCount: successfulGenerationCount,
       },
     });
   } catch (error) {
