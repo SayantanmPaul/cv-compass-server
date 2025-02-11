@@ -114,6 +114,26 @@ export const resumeParserController = async (req: Request, res: Response) => {
         }
 
         await redis.incr("successful_feedbacks");
+
+        // store a copy to redis
+        const copyData = {
+          resume: resume.buffer.toString("base64"),
+          jobDescription: jobDescription,
+          evaluationResult: {
+            atsScore: getATSScore(evaluationResult),
+            atsBreakDown: getATSScoreBreakups(evaluationResult),
+            summary: getSummary(evaluationResult),
+            relevantKeywords: getRelevantKeywords(evaluationResult),
+            missingKeywords: getMissingKeywords(evaluationResult),
+            feedback: getFeedbacks(evaluationResult),
+          },
+          timestamp: new Date().toISOString(),
+        };
+
+        const dataKey = `resume_with_jd:${uuidv4()}`;
+
+        await redis.set(dataKey, JSON.stringify(copyData));
+
         res.status(200).json({
           message: "Resume feedback generated successfully",
           // providedResume: parsedResData[0].text,
@@ -172,6 +192,7 @@ export const countVisitorSuccessFeedback = async (
     }
     await redis.sadd("unique_visits", visitId);
 
+    // retrieve visitor counts
     const [uniqueVisitorCount, successfulGenerationCount] = await Promise.all([
       redis.scard("unique_visits"),
       redis.get("successful_feedbacks").then((res) => parseInt(res || "0", 10)),
