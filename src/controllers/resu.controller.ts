@@ -6,6 +6,7 @@ import { RateLimitError } from "groq-sdk";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import {
+  AVAILABLE_MODELS,
   createErrorResponse,
   getATSScore,
   getATSScoreBreakups,
@@ -57,19 +58,21 @@ const handleModelEvaluation = ({
   markDownResume: string;
   jobDescription: string;
 }) => {
-  const evalutorFn: Record<
-    string,
-    typeof Llama3Evaluation | typeof HFDeepSeepEvaluation
-  > = {
-    "Llama-3.3-70b-versatile": Llama3Evaluation,
-    "DeepSeek-R1-Distill-Qwen-32B": HFDeepSeepEvaluation,
-  };
-
-  const evaluator = evalutorFn[modelName];
-
-  if (!evaluator) throw new Error("Invalid model specified");
-
-  return evaluator({ markDownResume, jobDescription });
+  if (modelName === "Llama-3.3-70b-versatile") {
+    return Llama3Evaluation({
+      markDownResume: markDownResume,
+      jobDescription: jobDescription,
+    });
+  } else if (
+    modelName === "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B" ||
+    modelName === "mistralai/Mistral-7B-v0.1"
+  ) {
+    return HFDeepSeepEvaluation({
+      modelName: modelName,
+      markDownResume: markDownResume,
+      jobDescription: jobDescription,
+    });
+  } else throw new Error("Invalid model name", { cause: modelName });
 };
 
 export const resumeParserController = async (req: Request, res: Response) => {
@@ -152,6 +155,8 @@ export const resumeParserController = async (req: Request, res: Response) => {
         if (error instanceof RateLimitError)
           return handleRateLimitError(error, res);
         //generic error
+        console.log(error);
+
         return createErrorResponse(
           res,
           501,
@@ -210,6 +215,22 @@ export const countVisitorSuccessFeedback = async (
       res,
       500,
       "Error retrieving visitor counts",
+      error
+    );
+  }
+};
+
+export const getModelNames = async (req: Request, res: Response) => {
+  try {
+    res.status(200).json({
+      status: "success",
+      data: AVAILABLE_MODELS,
+    });
+  } catch (error) {
+    return createErrorResponse(
+      res,
+      500,
+      "Failed to get the model names",
       error
     );
   }
