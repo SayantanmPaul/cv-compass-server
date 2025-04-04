@@ -47,9 +47,11 @@ Note: Assume that inputs will include both the resume and the job description. S
 export const Llama3Evaluation = async ({
   markDownResume,
   jobDescription,
+  modelName,
 }: {
   markDownResume: string;
   jobDescription: string;
+  modelName: string;
 }) => {
   try {
     const result = await llamaClient.chat.completions.create({
@@ -66,7 +68,7 @@ export const Llama3Evaluation = async ({
                 `,
         },
       ],
-      model: "llama-3.3-70b-versatile",
+      model: modelName,
       max_tokens: 2400,
     });
 

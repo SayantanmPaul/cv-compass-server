@@ -58,14 +58,18 @@ const handleModelEvaluation = ({
   markDownResume: string;
   jobDescription: string;
 }) => {
-  if (modelName === "Llama-3.3-70b-versatile") {
+  if (
+    modelName === "llama-3.3-70b-versatile" ||
+    modelName === "deepseek-r1-distill-qwen-32b"
+  ) {
     return Llama3Evaluation({
       markDownResume: markDownResume,
       jobDescription: jobDescription,
+      modelName: modelName,
     });
   } else if (
-    modelName === "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B" ||
-    modelName === "mistralai/Mistral-7B-v0.1"
+    modelName === "Qwen/Qwen2.5-5B-Instruct-1M" ||
+    modelName === "mistralai/Mistral-7B-Instruct-v0.3"
   ) {
     return HFDeepSeepEvaluation({
       modelName: modelName,

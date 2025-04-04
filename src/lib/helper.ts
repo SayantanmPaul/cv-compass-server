@@ -12,7 +12,7 @@ export function createErrorResponse(
   res: Response,
   statusCode: number,
   errorMessage: string,
-  errorDetails?: unknown,
+  errorDetails?: unknown
 ) {
   const response: ErrorResponse = {
     error: errorMessage,
@@ -24,9 +24,9 @@ export function createErrorResponse(
 }
 
 export const AVAILABLE_MODELS = [
-  "Llama-3.3-70b-versatile",
-  // "mistralai/Mistral-7B-v0.1",
-  "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+  "llama-3.3-70b-versatile",
+  "deepseek-r1-distill-qwen-32b",
+  "mistralai/Mistral-7B-Instruct-v0.3",
 ];
 
 // Get the ATS score from the content
@@ -74,7 +74,7 @@ export const getFeedbacks = (content: string): string[] => {
 
 // get the ats score breakups from the content
 export const getATSScoreBreakups = (
-  content: string,
+  content: string
 ): { [key: string]: number } => {
   const regex =
     /## (Keyword Matching|Years of Experience|Project Relevance|Quantifiable Achievements) Percentage:\s*(\d+)%/gi;
