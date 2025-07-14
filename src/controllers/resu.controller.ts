@@ -58,25 +58,25 @@ const handleModelEvaluation = ({
   markDownResume: string;
   jobDescription: string;
 }) => {
-  if (
-    modelName === "llama-3.3-70b-versatile" ||
-    modelName === "deepseek-r1-distill-qwen-32b"
-  ) {
+  try {
+    if (
+      modelName === "Qwen/Qwen2.5-5B-Instruct-1M" ||
+      modelName === "mistralai/Mistral-7B-Instruct-v0.3"
+    ) {
+      return HFDeepSeepEvaluation({
+        modelName: modelName,
+        markDownResume: markDownResume,
+        jobDescription: jobDescription,
+      });
+    }
     return Llama3Evaluation({
       markDownResume: markDownResume,
       jobDescription: jobDescription,
       modelName: modelName,
     });
-  } else if (
-    modelName === "Qwen/Qwen2.5-5B-Instruct-1M" ||
-    modelName === "mistralai/Mistral-7B-Instruct-v0.3"
-  ) {
-    return HFDeepSeepEvaluation({
-      modelName: modelName,
-      markDownResume: markDownResume,
-      jobDescription: jobDescription,
-    });
-  } else throw new Error("Invalid model name", { cause: modelName });
+  } catch (error) {
+    throw new Error("Invalid request", { cause: error });
+  }
 };
 
 export const resumeParserController = async (req: Request, res: Response) => {
@@ -113,11 +113,7 @@ export const resumeParserController = async (req: Request, res: Response) => {
         });
 
         if (!evaluationResult) {
-          return createErrorResponse(
-            res,
-            501,
-            "Error in generating response from llama3.3"
-          );
+          return createErrorResponse(res, 501, "Error in generating response");
         }
 
         await redis.incr("successful_feedbacks");
@@ -165,7 +161,7 @@ export const resumeParserController = async (req: Request, res: Response) => {
           res,
           501,
           "Model evaluation failed, Please try another model",
-          error
+          error,
         );
       }
     } catch (error) {
@@ -173,7 +169,7 @@ export const resumeParserController = async (req: Request, res: Response) => {
         res,
         501,
         "Resume parsing failed, Please try again later",
-        error
+        error,
       );
     } finally {
       // delete temporary file after processing
@@ -186,7 +182,7 @@ export const resumeParserController = async (req: Request, res: Response) => {
 
 export const countVisitorSuccessFeedback = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     const visitId = req.cookies.visitorId;
@@ -219,7 +215,7 @@ export const countVisitorSuccessFeedback = async (
       res,
       500,
       "Error retrieving visitor counts",
-      error
+      error,
     );
   }
 };
@@ -235,7 +231,7 @@ export const getModelNames = async (req: Request, res: Response) => {
       res,
       500,
       "Failed to get the model names",
-      error
+      error,
     );
   }
 };
